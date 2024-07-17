@@ -1,11 +1,12 @@
 import cv2 as open_cv
 import numpy as np
 import logging
-from drawing_utils import draw_contours
-from colors import COLOR_GREEN, COLOR_WHITE, COLOR_BLUE
+from selecionar_vaga import draw_contours
+from RGB import GREEN, WHITE, BLUE
 
 
-class MotionDetector:
+
+class Detector:
     LAPLACIAN = 1.5
     DETECT_DELAY = 1
 
@@ -77,7 +78,7 @@ class MotionDetector:
                     continue
 
                 if times[index] is not None and self.status_changed(statuses, index, status):
-                    if position_in_seconds - times[index] >= MotionDetector.DETECT_DELAY:
+                    if position_in_seconds - times[index] >= Detector.DETECT_DELAY:
                         statuses[index] = status
                         times[index] = None
                     continue
@@ -88,8 +89,8 @@ class MotionDetector:
             for index, p in enumerate(coordinates_data):
                 coordinates = self._coordinates(p)
 
-                color = COLOR_GREEN if statuses[index] else COLOR_BLUE
-                draw_contours(new_frame, coordinates, str(p["id"] + 1), COLOR_WHITE, color)
+                color = GREEN if statuses[index] else BLUE
+                draw_contours(new_frame, coordinates, str(p["id"] + 1), WHITE, color)
 
             open_cv.imshow(str(self.video), new_frame)
             k = open_cv.waitKey(1)
@@ -112,7 +113,7 @@ class MotionDetector:
         coordinates[:, 0] = coordinates[:, 0] - rect[0]
         coordinates[:, 1] = coordinates[:, 1] - rect[1]
 
-        status = np.mean(np.abs(laplacian * self.mask[index])) < MotionDetector.LAPLACIAN
+        status = np.mean(np.abs(laplacian * self.mask[index])) < Detector.LAPLACIAN
         logging.debug("status: %s", status)
 
         return status

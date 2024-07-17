@@ -1,11 +1,11 @@
 import cv2 as open_cv
 import numpy as np
 
-from colors import COLOR_WHITE
-from drawing_utils import draw_contours
+from RGB import WHITE
+from selecionar_vaga import draw_contours
 
 
-class CoordinatesGenerator:
+class Coordenadas:
     KEY_RESET = ord("r")
     KEY_QUIT = ord("q")
 
@@ -27,9 +27,9 @@ class CoordinatesGenerator:
             open_cv.imshow(self.caption, self.image)
             key = open_cv.waitKey(0)
 
-            if key == CoordinatesGenerator.KEY_RESET:
+            if key == Coordenadas.KEY_RESET:
                 self.image = self.image.copy()
-            elif key == CoordinatesGenerator.KEY_QUIT:
+            elif key == Coordenadas.KEY_QUIT:
                 break
         open_cv.destroyWindow(self.caption)
 
@@ -72,7 +72,7 @@ class CoordinatesGenerator:
                           "[" + str(self.coordinates[2][0]) + "," + str(self.coordinates[2][1]) + "]," +
                           "[" + str(self.coordinates[3][0]) + "," + str(self.coordinates[3][1]) + "]]\n")
 
-        draw_contours(self.image, coordinates, str(self.ids + 1), COLOR_WHITE)
+        draw_contours(self.image, coordinates, str(self.ids + 1), WHITE)
 
         for i in range(0, 4):
             self.coordinates.pop()
