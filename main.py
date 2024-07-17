@@ -1,78 +1,57 @@
-import cv2
-import numpy as np
-import torch
+import argparse
+import yaml
+from coordinates_generator import CoordinatesGenerator
+from motion_detector import MotionDetector
+from colors import *
+import logging
 
-# Função para calcular a densidade de pixels brancos em uma ROI
-def calcular_densidade(roi):
-    _, thresh = cv2.threshold(roi, 128, 255, cv2.THRESH_BINARY)
-    return np.sum(thresh == 255) / thresh.size
 
-# Função para detectar vagas utilizando YOLO
-def detectar_vagas_yolo(image):
-    # Carregar o modelo YOLO pré-treinado
-    model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
-    results = model(image)
-    return results.pandas().xyxy[0]
+def main():
+    logging.basicConfig(level=logging.INFO)
 
-# Função para detectar vagas utilizando contornos
-def detectar_vagas_contornos(image):
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-    edges = cv2.Canny(blurred, 50, 150)
-    
-    kernel = np.ones((5, 5), np.uint8)
-    edges = cv2.dilate(edges, kernel, iterations=1)
-    edges = cv2.erode(edges, kernel, iterations=1)
+    args = parse_args()
 
-    contours, _ = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    image_file = args.image_file
+    data_file = args.data_file
+    start_frame = args.start_frame
 
-    vagas = []
-    for contour in contours:
-        approx = cv2.approxPolyDP(contour, 0.02 * cv2.arcLength(contour, True), True)
-        if len(approx) == 4:
-            x, y, w, h = cv2.boundingRect(approx)
-            if w > 20 and h > 20:
-                vagas.append((x, y, w, h))
-    
-    return vagas
+    if image_file is not None:
+        with open(data_file, "w+") as points:
+            generator = CoordinatesGenerator(image_file, points, COLOR_RED)
+            generator.generate()
 
-# Carregando a imagem
-image_path = 'Vagas-de-Estacionamento-Entenda-o-que-Pode-e-o-Que-nao-Pode-no-Condominio.webp'
-frame = cv2.imread(image_path)
+    with open(data_file, "r") as data:
+        points = yaml.load(data, Loader=yaml.FullLoader)
+        detector = MotionDetector(args.video_file, points, int(start_frame))
+        detector.detect_motion()
 
-# Verificar se a imagem foi carregada corretamente
-if frame is None:
-    print("Erro ao carregar a imagem. Verifique o caminho do arquivo.")
-else:
-    # Detectar vagas usando YOLO
-    results_yolo = detectar_vagas_yolo(frame)
-    vagas_yolo = []
-    for index, row in results_yolo.iterrows():
-        if row['name'] == 'car':  # Ajustar conforme necessário
-            x1, y1, x2, y2 = int(row['xmin']), int(row['ymin']), int(row['xmax']), int(row['ymax'])
-            vagas_yolo.append((x1, y1, x2 - x1, y2 - y1))
 
-    # Detectar vagas usando contornos
-    vagas_contornos = detectar_vagas_contornos(frame)
+def parse_args():
+    parser = argparse.ArgumentParser(description='Generates Coordinates File')
 
-    # Combinar resultados
-    todas_vagas = vagas_yolo + vagas_contornos
+    parser.add_argument("--image",
+                        dest="image_file",
+                        required=False,
+                        help="Image file to generate coordinates on")
 
-    for (x, y, w, h) in todas_vagas:
-        vaga_roi = frame[y:y+h, x:x+w]
-        densidade = calcular_densidade(vaga_roi)
-        
-        # Condição simples para verificar se a vaga parece ocupada
-        if densidade > 0.1:  # Limiar de densidade, ajuste conforme necessário
-            cor = (0, 0, 255)  # Vermelho, vaga ocupada
-        else:
-            cor = (0, 255, 0)  # Verde, vaga livre
+    parser.add_argument("--video",
+                        dest="video_file",
+                        required=True,
+                        help="Video file to detect motion on")
 
-        # Desenhando um retângulo ao redor da vaga
-        cv2.rectangle(frame, (x, y), (x+w, y+h), cor, 2)
-        cv2.putText(frame, f"Dens: {densidade:.2f}", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, cor, 2)
+    parser.add_argument("--data",
+                        dest="data_file",
+                        required=True,
+                        help="Data file to be used with OpenCV")
 
-    # Visualizar bordas detectadas e o resultado final
-    cv2.imshow('Frame', frame)
-    cv2.waitKey(0)  # Aguarda uma tecla ser pressionada
-    cv2.destroyAllWindows()
+    parser.add_argument("--start-frame",
+                        dest="start_frame",
+                        required=False,
+                        default=1,
+                        help="Starting frame on the video")
+
+    return parser.parse_args()
+
+
+if __name__ == '__main__':
+    main()
