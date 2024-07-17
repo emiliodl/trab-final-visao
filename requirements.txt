@@ -1,7 +1,0 @@
-numpy #Operações matemáticas rápidas e eficientes sobre arrays de imagens, que são essenciais para análise e manipulação de dados de imagem.
-scipy #Processamento de imagem, como aplicação de filtros e operações morfológicas.
-Pillow #Carregamento e salvamento de imagens, transformações básicas de imagem.
-opencv-python #Segmentação de imagens, detecção de bordas, transformações geométricas, ajustes de cor e luz, entre outros.
-tensorflow #Modelagem de redes neurais para classificação de imagens, detecção de objetos e segmentação semântica.
-scikit-learn #Análise de componentes principais (PCA), normalização de dados, e outros métodos de pré-processamento.
-scikit-image #Tarefas de visão computacional e processamento de imagem, como filtros, morfologia, transformações.
