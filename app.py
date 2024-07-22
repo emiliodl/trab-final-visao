@@ -1,5 +1,6 @@
 import argparse
 import yaml
+import os
 from coordernadas_vaga import Coordenadas
 from detectar_carro import Detector
 from RGB import *
@@ -14,6 +15,9 @@ def main():
     image_file = args.image_file
     data_file = args.data_file
     start_frame = args.start_frame
+
+    # Ensure the directory exists
+    os.makedirs(os.path.dirname(data_file), exist_ok=True)
 
     if image_file is not None:
         with open(data_file, "w+") as points:
